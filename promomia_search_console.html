@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Promomia — Search Console</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0e11;
+    --surface: #17171c;
+    --surface2: #1f1f27;
+    --border: #2a2a35;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --accent: #7c6af7;
+    --accent2: #4fc98e;
+    --accent3: #f7a26a;
+    --danger: #f76a6a;
+    --radius: 10px;
+    --font: 'Inter', system-ui, sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* AUTH SCREEN */
+  #auth-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    gap: 24px;
+    padding: 24px;
+  }
+
+  .logo-mark {
+    width: 52px;
+    height: 52px;
+    background: var(--accent);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+
+  .auth-title {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -.3px;
+  }
+
+  .auth-sub {
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+    max-width: 320px;
+    line-height: 1.6;
+  }
+
+  .btn-google {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    color: #1a1a1a;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+  .btn-google:hover { opacity: .9; }
+  .btn-google svg { width: 18px; height: 18px; }
+
+  .auth-note {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    max-width: 280px;
+    line-height: 1.5;
+  }
+
+  /* LOADING */
+  #loading-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    gap: 16px;
+  }
+
+  .spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text { color: var(--muted); font-size: 13px; }
+
+  /* DASHBOARD */
+  #dashboard { display: none; padding: 0 0 40px; }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .header-logo { font-size: 15px; font-weight: 600; }
+  .header-logo span { color: var(--accent); }
+
+  .site-pill {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .btn-sm {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 7px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: border-color .15s;
+  }
+  .btn-sm:hover { border-color: var(--accent); }
+
+  .main { padding: 24px; max-width: 1100px; margin: 0 auto; }
+
+  /* PERIOD SELECTOR */
+  .period-bar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 24px;
+  }
+
+  .period-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 7px;
+    padding: 6px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .period-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  /* KPI CARDS */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+
+  .kpi-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-bottom: 8px;
+  }
+
+  .kpi-value {
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -.5px;
+    line-height: 1;
+  }
+
+  .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  .kpi.accent .kpi-value { color: var(--accent); }
+  .kpi.green .kpi-value { color: var(--accent2); }
+  .kpi.orange .kpi-value { color: var(--accent3); }
+  .kpi.red .kpi-value { color: var(--danger); }
+
+  /* CHART */
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .chart-wrap { height: 200px; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 2px; margin-bottom: 16px; background: var(--surface2); border-radius: 8px; padding: 3px; width: fit-content; }
+
+  .tab {
+    padding: 6px 14px;
+    font-size: 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all .15s;
+    border: none;
+    background: none;
+  }
+  .tab.active { background: var(--surface); color: var(--text); }
+
+  /* TABLE */
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .table-header {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .search-input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 7px;
+    padding: 6px 12px;
+    font-size: 12px;
+    width: 220px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--muted); }
+
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left;
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+  }
+  th:hover { color: var(--text); }
+
+  td {
+    padding: 10px 20px;
+    font-size: 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  .td-url {
+    max-width: 320px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--accent);
+    font-family: monospace;
+    font-size: 11px;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 500;
+  }
+  .badge-green { background: rgba(79,201,142,.15); color: var(--accent2); }
+  .badge-red { background: rgba(247,106,106,.15); color: var(--danger); }
+  .badge-orange { background: rgba(247,162,106,.15); color: var(--accent3); }
+
+  .bar-mini {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 4px;
+    overflow: hidden;
+  }
+  .bar-fill { height: 100%; border-radius: 2px; background: var(--accent); }
+
+  /* DIAGNOSTICS */
+  .diag-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+
+  .diag-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+
+  .diag-title { font-size: 12px; font-weight: 500; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+
+  .diag-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .diag-item:last-child { border-bottom: none; }
+
+  .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+  .dot-red { background: var(--danger); }
+  .dot-orange { background: var(--accent3); }
+  .dot-green { background: var(--accent2); }
+
+  .diag-text { color: var(--muted); }
+  .diag-text strong { color: var(--text); font-weight: 500; }
+
+  /* EMPTY / ERROR */
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .error-banner {
+    background: rgba(247,106,106,.1);
+    border: 1px solid rgba(247,106,106,.3);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--danger);
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 700px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .diag-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="logo-mark">📊</div>
+  <div class="auth-title">Promomia SEO</div>
+  <div class="auth-sub">Dashboard do Google Search Console. Conecte sua conta Google para ver os dados de tráfego orgânico do promomia.com.br.</div>
+  <button class="btn-google" onclick="startAuth()">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    </svg>
+    Entrar com Google
+  </button>
+  <div class="auth-note">Permissão de leitura apenas. Nenhum dado é armazenado fora da sua sessão.</div>
+</div>
+
+<!-- LOADING -->
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <div class="loading-text">Carregando dados do Search Console…</div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <header>
+    <div class="header-left">
+      <div class="header-logo">Promomia <span>SEO</span></div>
+      <div class="site-pill" id="site-label">promomia.com.br</div>
+    </div>
+    <button class="btn-sm" onclick="logout()">Sair</button>
+  </header>
+
+  <div class="main">
+    <div id="error-area"></div>
+
+    <div class="period-bar">
+      <button class="period-btn active" data-days="7" onclick="setPeriod(7, this)">7 dias</button>
+      <button class="period-btn" data-days="28" onclick="setPeriod(28, this)">28 dias</button>
+      <button class="period-btn" data-days="90" onclick="setPeriod(90, this)">90 dias</button>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi accent">
+        <div class="kpi-label">Cliques</div>
+        <div class="kpi-value" id="kpi-clicks">—</div>
+        <div class="kpi-sub">Total no período</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Impressões</div>
+        <div class="kpi-value" id="kpi-impressions">—</div>
+        <div class="kpi-sub">Aparições na busca</div>
+      </div>
+      <div class="kpi green">
+        <div class="kpi-label">CTR médio</div>
+        <div class="kpi-value" id="kpi-ctr">—</div>
+        <div class="kpi-sub">Clique por impressão</div>
+      </div>
+      <div class="kpi orange">
+        <div class="kpi-label">Posição média</div>
+        <div class="kpi-value" id="kpi-pos">—</div>
+        <div class="kpi-sub">Ranking no Google</div>
+      </div>
+    </div>
+
+    <!-- CHART -->
+    <div class="chart-card">
+      <div class="card-title">
+        <span>Cliques e impressões ao longo do tempo</span>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-main"></canvas></div>
+    </div>
+
+    <!-- QUERIES / PAGES TABS -->
+    <div class="table-card">
+      <div class="table-header">
+        <div>
+          <div class="tabs">
+            <button class="tab active" onclick="switchTab('queries', this)">Queries</button>
+            <button class="tab" onclick="switchTab('pages', this)">Páginas</button>
+          </div>
+        </div>
+        <input class="search-input" id="table-search" placeholder="Filtrar…" oninput="filterTable()">
+      </div>
+      <div id="table-area"><div class="empty">Carregando…</div></div>
+    </div>
+
+    <!-- DIAGNOSTICS -->
+    <div class="diag-grid">
+      <div class="diag-card" id="diag-oportunidades">
+        <div class="diag-title">⚡ Oportunidades de melhoria</div>
+        <div class="empty" style="padding:20px">Carregando…</div>
+      </div>
+      <div class="diag-card" id="diag-paginas">
+        <div class="diag-title">🔍 Páginas com impressões, CTR baixo</div>
+        <div class="empty" style="padding:20px">Carregando…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CLIENT_ID = '432101423046-0mat9e2rqta1imudjebq63m0vhnhsq6o.apps.googleusercontent.com';
+const SCOPES = 'https://www.googleapis.com/auth/webmasters.readonly';
+const SITE_URL = 'sc-domain:promomia.com.br';
+
+let accessToken = null;
+let currentDays = 7;
+let currentTab = 'queries';
+let allRows = [];
+let chartInstance = null;
+
+function startAuth() {
+  const params = new URLSearchParams({
+    client_id: CLIENT_ID,
+    redirect_uri: window.location.href.split('?')[0].split('#')[0],
+    response_type: 'token',
+    scope: SCOPES,
+    prompt: 'consent',
+  });
+  window.location.href = `https://accounts.google.com/o/oauth2/auth?${params}`;
+}
+
+function logout() {
+  accessToken = null;
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('dashboard').style.display = 'none';
+  window.history.replaceState({}, document.title, window.location.pathname);
+}
+
+function showError(msg) {
+  document.getElementById('error-area').innerHTML =
+    `<div class="error-banner">⚠️ ${msg}</div>`;
+}
+
+async function gscFetch(endpoint, body) {
+  const res = await fetch(`https://searchconsole.googleapis.com/webmasters/v3/${endpoint}`, {
+    method: body ? 'POST' : 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+function dateStr(daysAgo) {
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  return d.toISOString().slice(0, 10);
+}
+
+function fmt(n, isFloat) {
+  if (n == null || isNaN(n)) return '—';
+  if (isFloat) return n.toFixed(1);
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
+  return Math.round(n).toString();
+}
+
+async function loadData(days) {
+  const endDate = dateStr(2);
+  const startDate = dateStr(days + 2);
+
+  // Summary
+  const summary = await gscFetch(
+    `sites/${encodeURIComponent(SITE_URL)}/searchAnalytics/query`,
+    { startDate, endDate, dimensions: [] }
+  );
+  const row = summary.rows?.[0] || {};
+  document.getElementById('kpi-clicks').textContent = fmt(row.clicks);
+  document.getElementById('kpi-impressions').textContent = fmt(row.impressions);
+  document.getElementById('kpi-ctr').textContent = row.ctr != null ? (row.ctr * 100).toFixed(1) + '%' : '—';
+  document.getElementById('kpi-pos').textContent = fmt(row.position, true);
+
+  // Daily chart
+  const daily = await gscFetch(
+    `sites/${encodeURIComponent(SITE_URL)}/searchAnalytics/query`,
+    { startDate, endDate, dimensions: ['date'] }
+  );
+  renderChart(daily.rows || []);
+
+  // Queries
+  const queries = await gscFetch(
+    `sites/${encodeURIComponent(SITE_URL)}/searchAnalytics/query`,
+    { startDate, endDate, dimensions: ['query'], rowLimit: 100 }
+  );
+
+  // Pages
+  const pages = await gscFetch(
+    `sites/${encodeURIComponent(SITE_URL)}/searchAnalytics/query`,
+    { startDate, endDate, dimensions: ['page'], rowLimit: 100 }
+  );
+
+  window._queries = queries.rows || [];
+  window._pages = pages.rows || [];
+
+  renderTable();
+  renderDiagnostics(queries.rows || [], pages.rows || []);
+}
+
+function renderChart(rows) {
+  const labels = rows.map(r => r.keys[0].slice(5));
+  const clicks = rows.map(r => r.clicks);
+  const impressions = rows.map(r => r.impressions);
+
+  if (chartInstance) chartInstance.destroy();
+
+  const ctx = document.getElementById('chart-main').getContext('2d');
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Cliques',
+          data: clicks,
+          borderColor: '#7c6af7',
+          backgroundColor: 'rgba(124,106,247,.1)',
+          tension: .4,
+          fill: true,
+          pointRadius: 3,
+        },
+        {
+          label: 'Impressões',
+          data: impressions,
+          borderColor: '#4fc98e',
+          backgroundColor: 'rgba(79,201,142,.06)',
+          tension: .4,
+          fill: true,
+          pointRadius: 3,
+          yAxisID: 'y2',
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#6b6b80', font: { size: 11 } } },
+      },
+      scales: {
+        x: { ticks: { color: '#6b6b80', font: { size: 10 } }, grid: { color: '#2a2a35' } },
+        y: { ticks: { color: '#6b6b80', font: { size: 10 } }, grid: { color: '#2a2a35' } },
+        y2: { position: 'right', ticks: { color: '#4fc98e', font: { size: 10 } }, grid: { drawOnChartArea: false } },
+      },
+    },
+  });
+}
+
+function renderTable() {
+  const data = currentTab === 'queries' ? window._queries : window._pages;
+  allRows = data || [];
+  filterTable();
+}
+
+function filterTable() {
+  const q = document.getElementById('table-search').value.toLowerCase();
+  const filtered = allRows.filter(r => r.keys[0].toLowerCase().includes(q));
+  const maxClicks = Math.max(...filtered.map(r => r.clicks), 1);
+
+  const isPages = currentTab === 'pages';
+  const rows = filtered.slice(0, 50).map(r => {
+    const key = r.keys[0];
+    const display = isPages ? key.replace('https://promomia.com.br', '') : key;
+    const ctrVal = (r.ctr * 100).toFixed(1);
+    const ctrClass = r.ctr > 0.05 ? 'badge-green' : r.ctr > 0.01 ? 'badge-orange' : 'badge-red';
+    const pct = Math.round((r.clicks / maxClicks) * 100);
+    return `<tr>
+      <td><div class="${isPages ? 'td-url' : ''}" title="${key}">${display}</div></td>
+      <td>
+        <div>${fmt(r.clicks)}</div>
+        <div class="bar-mini"><div class="bar-fill" style="width:${pct}%"></div></div>
+      </td>
+      <td>${fmt(r.impressions)}</td>
+      <td><span class="badge ${ctrClass}">${ctrVal}%</span></td>
+      <td style="color:${r.position <= 10 ? '#4fc98e' : r.position <= 20 ? '#f7a26a' : '#f76a6a'}">${r.position.toFixed(1)}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('table-area').innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>${isPages ? 'Página' : 'Query'}</th>
+          <th>Cliques</th>
+          <th>Impressões</th>
+          <th>CTR</th>
+          <th>Posição</th>
+        </tr>
+      </thead>
+      <tbody>${rows || '<tr><td colspan="5" class="empty">Nenhum resultado</td></tr>'}</tbody>
+    </table>`;
+}
+
+function renderDiagnostics(queries, pages) {
+  // Oportunidades: posição 5-20 com impressões altas mas CTR baixo
+  const oportunidades = pages
+    .filter(p => p.position >= 5 && p.position <= 25 && p.impressions > 10 && p.ctr < 0.05)
+    .sort((a, b) => b.impressions - a.impressions)
+    .slice(0, 5);
+
+  const diagOp = document.getElementById('diag-oportunidades');
+  if (oportunidades.length === 0) {
+    diagOp.innerHTML = `<div class="diag-title">⚡ Oportunidades de melhoria</div><div class="empty" style="padding:16px">Nenhuma encontrada no período</div>`;
+  } else {
+    const items = oportunidades.map(p => {
+      const slug = p.keys[0].replace('https://promomia.com.br', '');
+      return `<div class="diag-item">
+        <div class="dot dot-orange"></div>
+        <div><strong>${slug}</strong><br>
+        <span class="diag-text">Pos. ${p.position.toFixed(0)} · ${fmt(p.impressions)} impressões · CTR ${(p.ctr*100).toFixed(1)}% — title/meta pode melhorar</span></div>
+      </div>`;
+    }).join('');
+    diagOp.innerHTML = `<div class="diag-title">⚡ Oportunidades de melhoria</div>${items}`;
+  }
+
+  // Páginas com muitas impressões mas pouquíssimos cliques (CTR < 1%)
+  const lowCtr = pages
+    .filter(p => p.impressions > 20 && p.ctr < 0.01)
+    .sort((a, b) => b.impressions - a.impressions)
+    .slice(0, 5);
+
+  const diagPag = document.getElementById('diag-paginas');
+  if (lowCtr.length === 0) {
+    diagPag.innerHTML = `<div class="diag-title">🔍 Páginas com CTR baixo</div><div class="empty" style="padding:16px">Nenhuma encontrada no período</div>`;
+  } else {
+    const items = lowCtr.map(p => {
+      const slug = p.keys[0].replace('https://promomia.com.br', '');
+      const color = p.position <= 10 ? 'dot-green' : p.position <= 20 ? 'dot-orange' : 'dot-red';
+      return `<div class="diag-item">
+        <div class="dot ${color}"></div>
+        <div><strong>${slug}</strong><br>
+        <span class="diag-text">${fmt(p.impressions)} impressões · CTR ${(p.ctr*100).toFixed(1)}% · Pos. ${p.position.toFixed(0)}</span></div>
+      </div>`;
+    }).join('');
+    diagPag.innerHTML = `<div class="diag-title">🔍 Páginas com impressões, CTR baixo</div>${items}`;
+  }
+}
+
+function switchTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('table-search').value = '';
+  renderTable();
+}
+
+function setPeriod(days, el) {
+  currentDays = days;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('error-area').innerHTML = '';
+  show('loading-screen');
+  hide('dashboard');
+  loadData(days).then(() => {
+    hide('loading-screen');
+    show('dashboard');
+  }).catch(e => {
+    hide('loading-screen');
+    show('dashboard');
+    showError('Erro ao recarregar: ' + e.message);
+  });
+}
+
+function show(id) { document.getElementById(id).style.display = id === 'loading-screen' ? 'flex' : 'block'; }
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+
+// Handle OAuth redirect
+async function init() {
+  const hash = window.location.hash;
+  if (hash.includes('access_token')) {
+    const params = new URLSearchParams(hash.slice(1));
+    accessToken = params.get('access_token');
+    window.history.replaceState({}, document.title, window.location.pathname);
+
+    hide('auth-screen');
+    show('loading-screen');
+
+    try {
+      // Try to find the site
+      const sites = await gscFetch('sites');
+      const siteList = sites.siteEntry || [];
+      const found = siteList.find(s =>
+        s.siteUrl.includes('promomia') || s.siteUrl.includes('sc-domain:promomia')
+      );
+      if (found) {
+        // Override with actual site URL
+        window.SITE_URL_OVERRIDE = found.siteUrl;
+      }
+
+      await loadData(currentDays);
+      hide('loading-screen');
+      show('dashboard');
+    } catch (e) {
+      hide('loading-screen');
+      show('auth-screen');
+      alert('Erro ao carregar dados: ' + e.message + '\n\nVerifique se o promomia.com.br está adicionado no Search Console com esta conta Google.');
+    }
+  }
+}
+
+// Override SITE_URL se necessário
+const origGscFetch = gscFetch;
+init();
+</script>
+</body>
+</html>
